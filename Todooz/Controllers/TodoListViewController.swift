@@ -10,15 +10,16 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-    var items = [String()]
+    var items = [TodoItem]()
     
     // Set up standard UserDefaults persistence method
+    // defaults is a SINGLETON!
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Get items from UserDefaults
-        if let todos = defaults.array(forKey: "Todooz") as? [String] {
+        if let todos = defaults.array(forKey: "Todooz") as? [TodoItem ] {
             items = todos
         }
     }
@@ -26,8 +27,14 @@ class TodoListViewController: UITableViewController {
     //MARK: - TableView Datasource methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        // Create a cell, popuklate it and return
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = items[indexPath.row]
+        
+        let item = items[indexPath.row]
+        
+        cell.textLabel?.text = item.title
+        cell.accessoryType = item.done ? .checkmark : .none
+
         return cell
     }
     
@@ -38,14 +45,12 @@ class TodoListViewController: UITableViewController {
     //MARK: TableView Delegate Methods
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Toggle a checkmark if item is selected
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        // Toggle a done property of TodoItem
+        items[indexPath.row].done.toggle()
         // Deselect row (remove background)
         tableView.deselectRow(at: indexPath, animated: true)
+        // Reload TableView
+        tableView.reloadData()
     }
     
     //MARK: - ADD NEW ITEMS
@@ -58,8 +63,12 @@ class TodoListViewController: UITableViewController {
         // Create an action
         let action = UIAlertAction(title: "Add Item", style: .default) {
             (action) in
-            // upon completion add an item to our items
-            self.items.append(textField.text!)
+            // upon completion
+            // create a TodoItem
+            let newItem = TodoItem()
+            newItem.title = textField.text!
+            //add an item to our items
+            self.items.append(newItem)
             // set the item into UserDefaults
             self.defaults.set(self.items, forKey: "Todooz")
             // and reload data source of tableView to render all items
