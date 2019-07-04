@@ -10,10 +10,17 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-    var items = ["Find Mike", "Buy Eggs", "Destroy Demogorgon"]
+    var items = [String()]
+    
+    // Set up standard UserDefaults persistence method
+    let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Get items from UserDefaults
+        if let todos = defaults.array(forKey: "Todooz") as? [String] {
+            items = todos
+        }
     }
     
     //MARK: - TableView Datasource methods
@@ -53,6 +60,8 @@ class TodoListViewController: UITableViewController {
             (action) in
             // upon completion add an item to our items
             self.items.append(textField.text!)
+            // set the item into UserDefaults
+            self.defaults.set(self.items, forKey: "Todooz")
             // and reload data source of tableView to render all items
             self.tableView.reloadData()
         }
