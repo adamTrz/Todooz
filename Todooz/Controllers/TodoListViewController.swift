@@ -7,38 +7,30 @@
 //
 
 import UIKit
+import CoreData
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: UITableViewController, UISearchBarDelegate {
     
-    var items = [TodoItem]()
-
-    // 1. Set up standard UserDefaults persistence method
-    // defaults is a SINGLETON!
-    // Also, it's only good for storing standard data types, not for Objects!
-//    let defaults = UserDefaults.standard
-    
-    // 2. Create a data file path to FileManagers document directory
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    var items = [Item]()
+    // 3. Use SharedData
+    // Grab context:
+    // Find reference to AppDelegate, grab persistentContainer and then grab its context
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Get items from UserDefaults
-//        if let todos = defaults.array(forKey: "Todooz") as? [TodoItem ] {
-//            items = todos
-//        }
-        // 2. load items from FileManager
         loadItems()
     }
     
     //MARK: - TableView Datasource methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Create a cell, popuklate it and return
+        // Create a cell, populate it and return
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
         let item = items[indexPath.row]
         
-        cell.textLabel?.text = item.title
+        cell.textLabel?.text = item.name
         cell.accessoryType = item.done ? .checkmark : .none
 
         return cell
@@ -53,7 +45,14 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Toggle a done property of TodoItem
         items[indexPath.row].done.toggle()
-        // 2. Save data into DataFile
+        
+//        // Delete data:
+//        // First delete it from context, then from local state!
+//        // After that we need to "commit" our changes to DB by doing context.save() as well...
+//        context.delete(items[indexPath.row])
+//        items.remove(at: indexPath.row)
+        
+        // Save data
         saveItems()
         // Deselect row (remove background)
         tableView.deselectRow(at: indexPath, animated: true)
@@ -71,17 +70,13 @@ class TodoListViewController: UITableViewController {
         // Create an action
         let action = UIAlertAction(title: "Add Item", style: .default) {
             (action) in
-            // upon completion
-            // create a TodoItem
-            let newItem = TodoItem()
-            newItem.title = textField.text!
-            //add an item to our items
+            // 3. Use CoreData to store items
+            // Create new Item as a CoreData entity
+            let newItem = Item(context: self.context)
+            newItem.name = textField.text!
+            newItem.done = false
+            
             self.items.append(newItem)
-            
-            // 1. set the items into UserDefaults
-//            self.defaults.set(self.items, forKey: "Todooz")
-            
-            // 2. Set items into a FileManager
             self.saveItems()
             
             // and reload data source of tableView to render all items
@@ -98,27 +93,26 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-    //MARK: Model Manipulation Methods:
-    func saveItems() {
-        let encoder = PropertyListEncoder()
-        do {
-            let data = try encoder.encode(items)
-            try data.write(to: dataFilePath!)
-        } catch {
-            print("Error encoding items \(items)")
-        }
-    }
+    //MARK: - Model Manipulation Methods:
     
-    func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
+    func saveItems() {
+        if context.hasChanges {
             do {
-                items = try decoder.decode([TodoItem].self, from: data)
+                try context.save()
             } catch {
-                print("Error decoding items \(items)")
+                print("Error saving contect \(error)")
             }
         }
-        
+    }
+    func loadItems() {
+        // Create a request that will fetch Items
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        do {
+            let items = try context.fetch(request)
+            self.items = items
+        } catch {
+            print("Error fetching data from context: \(error)")
+        }
     }
     
 }
