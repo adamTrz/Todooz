@@ -9,24 +9,26 @@
 import UIKit
 import RealmSwift
 
-class CategoryViewController: UITableViewController {
+// We inherit from own custome SwipeTableViewController superclass
+class CategoryViewController: SwipeTableViewController {
     
     // Initialise realm
     let realm = try! Realm()
     
     // Results is an auto-updating container type in Realm returned from object queries.
     var categories: Results<Category>?
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         loadCategories()
-        
     }
     
     //MARK: - TableView Datasource Methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        // extend cell created by a SwipeTableViewController superclass
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        //
         if let categoriesCount = categories?.count {
             cell.textLabel?.text = categoriesCount > 0 ? categories?[indexPath.row].name : "No Categories added yet"
             cell.accessoryType = categoriesCount > 0 ? .disclosureIndicator : .none
@@ -43,9 +45,8 @@ class CategoryViewController: UITableViewController {
     }
     
     
-    
     //MARK: - Data manipulation methods
-
+    
     func loadCategories() {
         
         // Fetch all objects of type "category"
@@ -63,9 +64,24 @@ class CategoryViewController: UITableViewController {
             print("Error saving category \(category). Error: \(error)")
         }
         tableView.reloadData()
-
+        
     }
     
+    // override updateModel created in SwipeTableViewController superclass
+    override func updateModel(at indexPath: IndexPath) {
+        //        super.updateModel(at: indexPath) // unnecessay now coz it doez nothing
+        
+        if let category = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(category)
+                }
+            } catch {
+                print("Wanted to delete , but failed miserably: \(error)")
+            }
+        }
+        
+    }
     
     //MARK: - Add New Categories
     
@@ -94,7 +110,7 @@ class CategoryViewController: UITableViewController {
     }
     
     
-
+    
     //MARK: - TableView Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
