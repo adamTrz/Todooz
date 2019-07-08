@@ -8,13 +8,15 @@
 
 import Foundation
 import RealmSwift
+import ChameleonFramework
 
 // Object is a class used to define Realm model objects.
 class Item: Object {
     // "dynamic" variables are being monitored by Realm for changes
     @objc dynamic var name: String = ""
     @objc dynamic var done: Bool = false
-    @objc dynamic var dateCreated: Date = Date()
+    @objc var dateCreated: Date = Date()
+    @objc var bgColor: String = UIColor.randomFlat.hexValue()
     // Set up Inverse Relationship with Categories
     // LinkingObjects is an auto-updating container type.
     // It represents zero or more objects that are linked to its owning model object through a property relationship.

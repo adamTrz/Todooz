@@ -8,9 +8,11 @@
 
 import Foundation
 import RealmSwift
+import ChameleonFramework
 
 class Category: Object {
     @objc dynamic var name: String = ""
+    @objc dynamic var bgColor: String = UIColor.randomFlat.hexValue()
     // Set up a Forvard Relationship with Items
     // List is the container type in Realm used to define to-many relationships.
     let items = List<Item>()
